@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  release-check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Check module tidy
+        run: |
+          go mod tidy
+          git diff --exit-code -- go.mod go.sum
+
+      - name: Run tests
+        run: go test -v ./...
+
+      - name: Run integration tests
+        run: go test -count=1 -run Integration -v ./...
+
+      - name: Run lint
+        run: go tool golangci-lint run ./...
+
+      - name: Run vulnerability checks
+        run: go tool govulncheck ./...
+
+      - name: Scan tracked files for secrets
+        run: |
+          if git grep -n -I -E 'BEGIN (RSA|DSA|EC|OPENSSH|PRIVATE) KEY|AKIA[0-9A-Z]{16}|ghp_[A-Za-z0-9_]{36}|github_pat_[A-Za-z0-9_]{82,}|xox[baprs]-[A-Za-z0-9-]{10,}|sk-[A-Za-z0-9]{20,}' -- . ':!go.sum'; then
+            echo "Potential secrets found in tracked files" >&2
+            exit 1
+          fi
+
+      - name: Build
+        run: go build -o mcp-maven ./cmd/mcp-maven

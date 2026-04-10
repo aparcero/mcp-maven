@@ -1,0 +1,39 @@
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+/mcp-maven
+/mcp-maven-*
+/bin/mcp-maven
+/bin/mcp-maven-*
+
+# Test files
+*.test
+*.out
+coverage.out
+coverage.html
+
+# Go workspace
+/workspace/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.log
