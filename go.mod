@@ -1,6 +1,6 @@
 module github.com/aparcero/mcp-maven
 
-go 1.26.1
+go 1.26.4
 
 require github.com/modelcontextprotocol/go-sdk v1.6.1
 
