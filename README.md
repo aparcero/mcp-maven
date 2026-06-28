@@ -370,9 +370,13 @@ mise run test-race
 mise run lint
 mise run vulncheck
 mise run secret-scan
+mise run inspector
+mise run inspector-http
 mise run build
 mise run build-all
 ```
+
+Use `mise run inspector` to launch the STDIO server through the MCP Inspector for visual tool/schema inspection and manual tool calls. Use `mise run inspector-http` to start the HTTP server and open the Inspector against `http://127.0.0.1:${HTTP_PORT:-8080}/mcp`. Set `MCP_MAVEN_INSPECTOR_HTTP_PORT` to override the port for that task without editing `.env`.
 
 Equivalent Go commands:
 

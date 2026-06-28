@@ -8,6 +8,8 @@ Build tool: **mise** (tasks defined in `mise.toml`)
 mise run build          # mkdir -p bin && go build -o bin/mcp-maven ./cmd/mcp-maven
 mise run build-all      # builds bin/mcp-maven + bin/mcp-maven-noc7 (with -tags noc7)
 mise run run            # go run ./cmd/mcp-maven (STDIO mode)
+mise run inspector      # npx MCP Inspector against go run ./cmd/mcp-maven
+mise run inspector-http # HTTP server + npx MCP Inspector against /mcp
 mise run tidy           # go mod tidy
 mise run check          # tidy + tests + integration tests + lint + vulncheck + secret scan + build
 ```
