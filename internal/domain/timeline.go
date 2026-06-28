@@ -88,11 +88,11 @@ type TimelineEntry struct {
 
 // VelocityTrend analyzes release velocity changes.
 type VelocityTrend struct {
-	Trend             TrendDirection
-	Description       string
-	RecentVelocity    float64
+	Trend              TrendDirection
+	Description        string
+	RecentVelocity     float64
 	HistoricalVelocity float64
-	ChangePercentage  float64
+	ChangePercentage   float64
 }
 
 // StabilityPattern analyzes version stability patterns.
@@ -105,10 +105,10 @@ type StabilityPattern struct {
 
 // RecentActivity summarizes recent release activity.
 type RecentActivity struct {
-	ReleasesLastMonth  int
+	ReleasesLastMonth   int
 	ReleasesLastQuarter int
-	ActivityLevel      ActivityLevel
-	LastReleaseAge     int64
+	ActivityLevel       ActivityLevel
+	LastReleaseAge      int64
 	ActivityDescription string
 }
 

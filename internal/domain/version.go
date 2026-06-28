@@ -1,7 +1,6 @@
 package domain
 
 import (
-	"regexp"
 	"strconv"
 	"strings"
 )
@@ -227,14 +226,6 @@ func (vc *VersionComparator) determineQualifierUpdate(current, latest string) Up
 	return UpdatePatch
 }
 
-// max returns the maximum of two integers.
-func max(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
-}
-
 type qualifierInfo struct {
 	rank   int
 	number int
@@ -324,12 +315,14 @@ func qualifierInfoFromString(qualifier string) qualifierInfo {
 }
 
 func trailingNumber(s string) int {
-	re := regexp.MustCompile(`(\d+)$`)
-	match := re.FindStringSubmatch(s)
-	if len(match) != 2 {
+	end := len(s)
+	for end > 0 && isDigit(s[end-1]) {
+		end--
+	}
+	if end == len(s) {
 		return 0
 	}
-	n, err := strconv.Atoi(match[1])
+	n, err := strconv.Atoi(s[end:])
 	if err != nil {
 		return 0
 	}
