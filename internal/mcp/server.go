@@ -129,20 +129,8 @@ func (s *Server) registerTools() error {
 	// Register Phase 5 tools (Context7 compatibility wrapper)
 	mcp.AddTool(s.mcpServer, &mcp.Tool{
 		Name:        "get_library_docs",
-		Description: "Compatibility wrapper that resolves a library in Context7 and fetches matching docs.",
+		Description: "Resolve a Maven coordinate in Context7 and fetch matching documentation, with links to javadoc.io and Maven Central.",
 	}, s.handleGetLibraryDocs)
-
-	if s.docs != nil && s.docs.Enabled() {
-		mcp.AddTool(s.mcpServer, &mcp.Tool{
-			Name:        "resolve-library-id",
-			Description: "Search Context7 for matching documentation libraries and return candidate library IDs.",
-		}, s.handleResolveLibraryID)
-
-		mcp.AddTool(s.mcpServer, &mcp.Tool{
-			Name:        "query-docs",
-			Description: "Fetch documentation snippets from Context7 for a specific library ID and query.",
-		}, s.handleQueryDocs)
-	}
 
 	// Add a ping tool for testing
 	mcp.AddTool(s.mcpServer, &mcp.Tool{

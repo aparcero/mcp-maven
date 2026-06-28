@@ -20,51 +20,9 @@ type GetLibraryDocsArgs struct {
 	Query      string `json:"query,omitempty" jsonschema:"Optional specific query for documentation"`
 }
 
-// ResolveLibraryIDArgs represents arguments for resolve-library-id.
-type ResolveLibraryIDArgs struct {
-	LibraryName string `json:"libraryName" jsonschema:"required,The package or library name to search in Context7"`
-	Query       string `json:"query" jsonschema:"required,The documentation question or task used to rank search results"`
-}
-
-// QueryDocsArgs represents arguments for query-docs.
-type QueryDocsArgs struct {
-	LibraryID string `json:"libraryId" jsonschema:"required,The exact Context7 library ID returned by resolve-library-id"`
-	Query     string `json:"query" jsonschema:"required,The focused documentation question to ask Context7"`
-}
-
-// handleResolveLibraryID handles the resolve-library-id tool.
-func (s *Server) handleResolveLibraryID(ctx context.Context, req *mcp.CallToolRequest, args ResolveLibraryIDArgs) (*mcp.CallToolResult, any, error) {
-	if !s.docs.Enabled() {
-		return errorResult("SERVICE_UNAVAILABLE", "Context7 is not enabled. Set CONTEXT7_ENABLED=true to expose Context7 tools."), nil, nil
-	}
-
-	result, err := s.docs.ResolveLibraryID(ctx, ctx7.ResolveLibraryIDQuery{
-		LibraryName: strings.TrimSpace(args.LibraryName),
-		Query:       strings.TrimSpace(args.Query),
-	})
-	if err != nil {
-		return context7ErrorResult(err), nil, nil
-	}
-	return successResult(result), nil, nil
-}
-
-// handleQueryDocs handles the query-docs tool.
-func (s *Server) handleQueryDocs(ctx context.Context, req *mcp.CallToolRequest, args QueryDocsArgs) (*mcp.CallToolResult, any, error) {
-	if !s.docs.Enabled() {
-		return errorResult("SERVICE_UNAVAILABLE", "Context7 is not enabled. Set CONTEXT7_ENABLED=true to expose Context7 tools."), nil, nil
-	}
-
-	result, err := s.docs.QueryDocs(ctx, ctx7.QueryDocsQuery{
-		LibraryID: strings.TrimSpace(args.LibraryID),
-		Query:     strings.TrimSpace(args.Query),
-	})
-	if err != nil {
-		return context7ErrorResult(err), nil, nil
-	}
-	return successResult(result), nil, nil
-}
-
-// handleGetLibraryDocs handles the get_library_docs compatibility tool.
+// handleGetLibraryDocs handles the get_library_docs tool. It resolves a Maven
+// coordinate to a Context7 library, fetches matching documentation, and returns
+// it together with curated reference links.
 func (s *Server) handleGetLibraryDocs(ctx context.Context, req *mcp.CallToolRequest, args GetLibraryDocsArgs) (*mcp.CallToolResult, any, error) {
 	observability.Debug("handleGetLibraryDocs called", "groupId", args.GroupID, "artifactId", args.ArtifactID)
 
@@ -129,6 +87,7 @@ func (s *Server) handleGetLibraryDocs(ctx context.Context, req *mcp.CallToolRequ
 	return successResult(result), nil, nil
 }
 
+// context7ErrorResult maps a Context7 provider error to a business error result.
 func context7ErrorResult(err error) *mcp.CallToolResult {
 	var apiErr *ctx7.APIError
 	if ctx7.AsAPIError(err, &apiErr) {

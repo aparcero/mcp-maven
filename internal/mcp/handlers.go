@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"sync"
 
-	ctx7 "github.com/aparcero/mcp-maven/internal/context7"
 	"github.com/aparcero/mcp-maven/internal/domain"
 	"github.com/aparcero/mcp-maven/internal/mavencentral"
 	"github.com/aparcero/mcp-maven/internal/observability"
@@ -288,9 +287,6 @@ func (s *Server) handleCompareDependencyVersions(ctx context.Context, req *mcp.C
 					info["updateAvailable"] = updateType != domain.UpdateNone
 					if fallback := s.buildSameMajorStableFallback(ctx, coord, d.Version, latest, args.StabilityFilter); fallback != nil {
 						info["sameMajorStableFallback"] = fallback
-					}
-					if s.docs != nil && s.docs.Enabled() && updateType != domain.UpdateNone {
-						info["context7Guidance"] = ctx7.MigrationGuidance(coord.String(), updateType.String())
 					}
 				}
 			}

@@ -6,7 +6,6 @@ import (
 	"sync"
 	"time"
 
-	ctx7 "github.com/aparcero/mcp-maven/internal/context7"
 	"github.com/aparcero/mcp-maven/internal/domain"
 	"github.com/aparcero/mcp-maven/internal/observability"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
@@ -90,9 +89,6 @@ func (s *Server) handleAnalyzeProjectHealth(ctx context.Context, req *mcp.CallTo
 			analysis["ageClassification"] = freshness.String()
 			analysis["stability"] = vc.GetVersionType(latest.Version).String()
 			analysis["isStable"] = vc.IsStable(latest.Version)
-			if s.docs != nil && s.docs.Enabled() && (freshness == domain.FreshnessAging || freshness == domain.FreshnessStale) {
-				analysis["context7Guidance"] = ctx7.ModernizationGuidance(coord.String(), freshness.String())
-			}
 
 			// Calculate health score (0-100)
 			healthScore := calculateHealthScore(int(daysSinceRelease), freshness, vc.IsStable(latest.Version))
