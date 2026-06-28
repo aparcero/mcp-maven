@@ -142,9 +142,7 @@ HTTP mode does not add authentication. Bind it only to trusted local or private 
 | `analyze_dependency_age` | Always | Classify dependency freshness across a list. |
 | `analyze_release_patterns` | Always | Summarize release cadence and prerelease strategy. |
 | `analyze_project_health` | Always | Produce aggregate health, update, age, and optional license data. |
-| `get_library_docs` | Registered always, requires Context7 enabled to succeed | Resolve and fetch documentation for a Maven library. |
-| `resolve-library-id` | Context7 enabled only | Search Context7 for documentation library IDs. |
-| `query-docs` | Context7 enabled only | Fetch Context7 documentation snippets by library ID. |
+| `get_library_docs` | Registered always, requires Context7 enabled to succeed | Resolve a Maven coordinate and fetch matching documentation. |
 | `ping` | Always | Connectivity diagnostic. |
 
 ### Common Arguments
@@ -332,9 +330,9 @@ CONTEXT7_ENABLED=true CONTEXT7_API_KEY=your-token ./bin/mcp-maven
 
 When enabled:
 
-- `resolve-library-id` and `query-docs` are registered as raw Context7-style tools.
-- `get_library_docs` resolves a Maven coordinate to likely documentation and returns matching snippets.
-- Some dependency analysis tools add migration or modernization guidance for outdated dependencies.
+- `get_library_docs` resolves a Maven coordinate to likely documentation and returns matching snippets, with links to javadoc.io and Maven Central.
+
+> **Note:** For general Context7 documentation search, run Context7's own MCP server alongside `mcp-maven`. The integration here is intentionally limited to the Maven-specific coordinate-to-docs bridge.
 
 ## Network and Privacy
 
@@ -373,7 +371,6 @@ mise run secret-scan
 mise run inspector
 mise run inspector-http
 mise run build
-mise run build-all
 ```
 
 Use `mise run inspector` to launch the STDIO server through the MCP Inspector for visual tool/schema inspection and manual tool calls. Use `mise run inspector-http` to start the HTTP server and open the Inspector against `http://127.0.0.1:${HTTP_PORT:-8080}/mcp`. Set `MCP_MAVEN_INSPECTOR_HTTP_PORT` to override the port for that task without editing `.env`.
@@ -423,10 +420,6 @@ go build -trimpath \
 `server exits with invalid configuration`
 
 Check `TRANSPORT`, `HTTP_PORT`, `LOG_LEVEL`, and duration values such as `MAVEN_TIMEOUT`.
-
-`Context7 tools are missing`
-
-Set `CONTEXT7_ENABLED=true`. The raw `resolve-library-id` and `query-docs` tools are only registered when Context7 is enabled.
 
 `get_library_docs returns SERVICE_UNAVAILABLE`
 

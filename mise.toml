@@ -8,14 +8,6 @@ golang = "1.26"
 description = "Build the mcp-maven binary"
 run = "mkdir -p bin && go build -o bin/mcp-maven ./cmd/mcp-maven"
 
-[tasks.build-all]
-description = "Build all binary variants"
-run = """
-mkdir -p bin
-go build -o bin/mcp-maven ./cmd/mcp-maven
-go build -tags noc7 -o bin/mcp-maven-noc7 ./cmd/mcp-maven
-"""
-
 [tasks.run]
 description = "Run the server in STDIO mode"
 run = "go run ./cmd/mcp-maven"
@@ -57,11 +49,11 @@ npx -y @modelcontextprotocol/inspector --transport http --server-url "http://127
 """
 
 [tasks.test]
-description = "Run all tests"
-run = "go test -v ./..."
+description = "Run unit tests only (excludes integration tests)"
+run = "go test -short -v ./..."
 
 [tasks.test-unit]
-description = "Run unit tests only"
+description = "Run unit tests only (alias for test)"
 run = "go test -short -v ./..."
 
 [tasks.test-integration]
@@ -85,7 +77,11 @@ run = "go test -race ./..."
 
 [tasks.clean]
 description = "Clean build artifacts"
-run = "rm -rf mcp-maven mcp-maven-noc7 bin/mcp-maven bin/mcp-maven-noc7 coverage.out coverage.html"
+run = "rm -rf bin/mcp-maven coverage.out coverage.html"
+
+[tasks.fmt]
+description = "Format Go code"
+run = "gofmt -w ."
 
 [tasks.lint]
 description = "Run golangci-lint"
@@ -114,8 +110,19 @@ run = """
 mise run tidy
 mise run test
 mise run test-integration
+mise run test-race
 mise run lint
 mise run vulncheck
 mise run secret-scan
 mise run build
+"""
+
+[tasks.ci]
+description = "CI gate: release-readiness checks without verbose output or test cache"
+run = """
+go mod tidy
+go test -count=1 ./...
+go tool golangci-lint run ./...
+go tool govulncheck ./...
+go build ./cmd/mcp-maven
 """

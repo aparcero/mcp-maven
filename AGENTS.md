@@ -6,7 +6,6 @@ Build tool: **mise** (tasks defined in `mise.toml`)
 
 ```bash
 mise run build          # mkdir -p bin && go build -o bin/mcp-maven ./cmd/mcp-maven
-mise run build-all      # builds bin/mcp-maven + bin/mcp-maven-noc7 (with -tags noc7)
 mise run run            # go run ./cmd/mcp-maven (STDIO mode)
 mise run inspector      # npx MCP Inspector against go run ./cmd/mcp-maven
 mise run inspector-http # HTTP server + npx MCP Inspector against /mcp
@@ -17,7 +16,7 @@ mise run check          # tidy + tests + integration tests + lint + vulncheck + 
 ## Test Commands
 
 ```bash
-mise run test                        # go test -v ./...
+mise run test                        # unit tests only (go test -short -v ./...)
 mise run test-integration            # go test -count=1 -run Integration -v ./...
 mise run test-integration-live       # live Maven Central integration tests
 mise run test-race                   # go test -race ./...
@@ -30,12 +29,13 @@ go test -short -v ./...              # unit tests only
 ## Lint
 
 ```bash
+mise run fmt            # gofmt -w .
 mise run lint           # golangci-lint run ./...
 mise run vulncheck      # govulncheck ./...
 mise run secret-scan    # high-confidence tracked-file secret scan
 ```
 
-Run `mise run check` after any code change.
+Run `mise run check` after any code change. Use `mise run ci` for the CI gate (non-verbose, `-count=1`).
 
 ## Project Structure
 
