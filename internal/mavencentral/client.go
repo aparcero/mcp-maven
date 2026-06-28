@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"sort"
 	"strings"
 	"time"
 
@@ -25,7 +26,6 @@ type Client struct {
 	config     config.MavenCentralConfig
 	cacheCfg   config.CacheConfig
 	cache      *cache.Cache
-	keyGen     cache.Key
 	comparator *domain.VersionComparator
 }
 
@@ -42,7 +42,6 @@ func NewClient(cfg config.MavenCentralConfig, c *cache.Cache, cacheCfg ...config
 		config:     cfg,
 		cacheCfg:   cacheConfig,
 		cache:      c,
-		keyGen:     cache.Key{},
 		comparator: domain.NewVersionComparator(),
 	}
 }
@@ -107,7 +106,7 @@ func (m *MavenMetadata) HasValidVersioning() bool {
 // GetAllVersions fetches all versions for a Maven coordinate.
 func (c *Client) GetAllVersions(ctx context.Context, coord *domain.Coordinates) ([]string, error) {
 	// Check cache first
-	cacheKey := c.keyGen.AllVersions(coord.GroupID, coord.ArtifactID, coord.Packaging)
+	cacheKey := cache.AllVersionsKey(coord.GroupID, coord.ArtifactID, coord.Packaging)
 	if cached, found := c.cache.Get(cacheKey); found {
 		if versions, ok := cached.([]string); ok {
 			return versions, nil
@@ -140,7 +139,7 @@ func (c *Client) GetAllVersions(ctx context.Context, coord *domain.Coordinates) 
 
 // GetVersionsWithTimestamps fetches versions with accurate POM timestamps.
 func (c *Client) GetVersionsWithTimestamps(ctx context.Context, coord *domain.Coordinates, limit int) ([]domain.MavenArtifact, error) {
-	cacheKey := c.keyGen.HistoricalData(coord.GroupID, coord.ArtifactID, limit, coord.Packaging)
+	cacheKey := cache.HistoricalDataKey(coord.GroupID, coord.ArtifactID, limit, coord.Packaging)
 	if cached, found := c.cache.Get(cacheKey); found {
 		if artifacts, ok := cached.([]domain.MavenArtifact); ok {
 			return artifacts, nil
@@ -223,7 +222,7 @@ func (c *Client) GetArtifactWithTimestamp(ctx context.Context, coord *domain.Coo
 // VersionExists checks if a specific version exists.
 func (c *Client) VersionExists(ctx context.Context, coord *domain.Coordinates, version string) (bool, error) {
 	// Check cache first
-	cacheKey := c.keyGen.VersionCheck(coord.GroupID, coord.ArtifactID, version, coord.Packaging)
+	cacheKey := cache.VersionCheckKey(coord.GroupID, coord.ArtifactID, version, coord.Packaging)
 	if cached, found := c.cache.Get(cacheKey); found {
 		if exists, ok := cached.(bool); ok {
 			return exists, nil
@@ -337,7 +336,7 @@ func (c *Client) fetchTimestamp(ctx context.Context, coord *domain.Coordinates, 
 	url := c.buildPomURL(coord, version)
 
 	// Check cache first
-	cacheKey := c.keyGen.Timestamp(coord.GroupID, coord.ArtifactID, version)
+	cacheKey := cache.TimestampKey(coord.GroupID, coord.ArtifactID, version)
 	if cached, found := c.cache.Get(cacheKey); found {
 		if ts, ok := cached.(int64); ok {
 			return ts, nil
@@ -398,27 +397,18 @@ func (c *Client) sortVersions(versions []string) []string {
 	sorted := make([]string, len(versions))
 	copy(sorted, versions)
 
-	// Use the comparator to sort
-	for i := 0; i < len(sorted); i++ {
-		for j := i + 1; j < len(sorted); j++ {
-			if c.comparator.Compare(sorted[j], sorted[i]) > 0 {
-				sorted[i], sorted[j] = sorted[j], sorted[i]
-			}
-		}
-	}
+	sort.Slice(sorted, func(i, j int) bool {
+		return c.comparator.Compare(sorted[i], sorted[j]) > 0
+	})
 
 	return sorted
 }
 
 // sortArtifactsByVersion sorts artifacts by version descending.
 func (c *Client) sortArtifactsByVersion(artifacts []domain.MavenArtifact) {
-	for i := 0; i < len(artifacts); i++ {
-		for j := i + 1; j < len(artifacts); j++ {
-			if c.comparator.Compare(artifacts[j].Version, artifacts[i].Version) > 0 {
-				artifacts[i], artifacts[j] = artifacts[j], artifacts[i]
-			}
-		}
-	}
+	sort.Slice(artifacts, func(i, j int) bool {
+		return c.comparator.Compare(artifacts[i].Version, artifacts[j].Version) > 0
+	})
 }
 
 // GetLicenses extracts license information from a POM file.
@@ -449,7 +439,7 @@ func (c *Client) GetLicenses(ctx context.Context, coord *domain.Coordinates) ([]
 		return nil, err
 	}
 
-	return c.parseLicensesFromPOM(string(body)), nil
+	return c.parseLicensesFromPOM(body), nil
 }
 
 // LicenseInfo represents license information from a POM.
@@ -458,57 +448,36 @@ type LicenseInfo struct {
 	URL  string
 }
 
+// pomLicenses is the XML projection of a POM used for license extraction.
+// Fields are matched by local name only, so the Maven default namespace
+// (http://maven.apache.org/POM/4.0.0) and unnamespaced POMs both decode.
+type pomLicenses struct {
+	Licenses struct {
+		License []struct {
+			Name string `xml:"name"`
+			URL  string `xml:"url"`
+		} `xml:"license"`
+	} `xml:"licenses"`
+}
+
 // parseLicensesFromPOM extracts license information from POM XML content.
-func (c *Client) parseLicensesFromPOM(pomContent string) []LicenseInfo {
-	// Simple regex-based extraction
-	// In production, would use proper XML parsing
-	licenses := []LicenseInfo{}
-
-	// Find all <license> sections
-	licenseStart := 0
-	for {
-		startIdx := strings.Index(pomContent[licenseStart:], "<license>")
-		if startIdx == -1 {
-			break
-		}
-		startIdx += licenseStart
-
-		endIdx := strings.Index(pomContent[startIdx:], "</license>")
-		if endIdx == -1 {
-			break
-		}
-		endIdx += startIdx + len("</license>")
-
-		licenseBlock := pomContent[startIdx:endIdx]
-
-		// Extract name
-		nameStart := strings.Index(licenseBlock, "<name>")
-		name := ""
-		if nameStart != -1 {
-			nameStart += len("<name>")
-			nameEnd := strings.Index(licenseBlock[nameStart:], "</name>")
-			if nameEnd != -1 {
-				name = strings.TrimSpace(licenseBlock[nameStart : nameStart+nameEnd])
-			}
-		}
-
-		// Extract URL
-		urlStart := strings.Index(licenseBlock, "<url>")
-		url := ""
-		if urlStart != -1 {
-			urlStart += len("<url>")
-			urlEnd := strings.Index(licenseBlock[urlStart:], "</url>")
-			if urlEnd != -1 {
-				url = strings.TrimSpace(licenseBlock[urlStart : urlStart+urlEnd])
-			}
-		}
-
-		if name != "" {
-			licenses = append(licenses, LicenseInfo{Name: name, URL: url})
-		}
-
-		licenseStart = endIdx
+// Only licenses with a non-empty name are returned; the result is never nil.
+func (c *Client) parseLicensesFromPOM(pomContent []byte) []LicenseInfo {
+	var project pomLicenses
+	if err := xml.Unmarshal(pomContent, &project); err != nil {
+		return []LicenseInfo{}
 	}
 
+	licenses := make([]LicenseInfo, 0, len(project.Licenses.License))
+	for _, lic := range project.Licenses.License {
+		name := strings.TrimSpace(lic.Name)
+		if name == "" {
+			continue
+		}
+		licenses = append(licenses, LicenseInfo{
+			Name: name,
+			URL:  strings.TrimSpace(lic.URL),
+		})
+	}
 	return licenses
 }
