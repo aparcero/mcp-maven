@@ -445,10 +445,6 @@ Before opening a pull request, run:
 mise run check
 ```
 
-## Security
-
-Please do not publish vulnerability details in public issues. Use GitHub Security Advisories if available; otherwise open a minimal public issue asking for a private security contact and omit exploit details.
-
 ## License
 
 MIT. See [LICENSE](LICENSE).
