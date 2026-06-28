@@ -10,7 +10,7 @@ mise run run            # go run ./cmd/mcp-maven (STDIO mode)
 mise run inspector      # npx MCP Inspector against go run ./cmd/mcp-maven
 mise run inspector-http # HTTP server + npx MCP Inspector against /mcp
 mise run tidy           # go mod tidy
-mise run check          # tidy + tests + integration tests + lint + vulncheck + secret scan + build
+mise run check          # tidy + unit tests + integration tests + race detector + lint + vulncheck + secret scan + build
 ```
 
 ## Test Commands

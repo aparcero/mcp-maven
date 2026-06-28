@@ -361,6 +361,8 @@ Useful commands:
 
 ```bash
 mise run check
+mise run fmt
+mise run ci
 mise run tidy
 mise run test
 mise run test-integration
@@ -411,7 +413,7 @@ Build a release-style binary with version metadata:
 ```bash
 mkdir -p bin
 go build -trimpath \
-  -ldflags "-s -w -X main.version=v0.1.0 -X main.commit=$(git rev-parse --short HEAD) -X main.date=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+  -ldflags "-s -w -X main.version=v0.2.0 -X main.commit=$(git rev-parse --short HEAD) -X main.date=$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
   -o bin/mcp-maven ./cmd/mcp-maven
 ```
 
@@ -445,7 +447,7 @@ mise run check
 
 ## Security
 
-Please do not publish vulnerability details in public issues. See [SECURITY.md](SECURITY.md).
+Please do not publish vulnerability details in public issues. Use GitHub Security Advisories if available; otherwise open a minimal public issue asking for a private security contact and omit exploit details.
 
 ## License
 
